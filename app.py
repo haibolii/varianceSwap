@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
-"""
-Spyder Editor
 
-This is a temporary script file.
-"""
-import sys
 import os
-import pandas_datareader.data as web
+import sys
+import webbrowser
 from datetime import datetime, timedelta
+
 import dash
-#import dash_bootstrap_components as dbc
-import pandas as pd
-import numpy as np
-#import pathlib
-from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.exceptions import PreventUpdate
+import numpy as np
+#import dash_bootstrap_components as dbc
+import pandas as pd
+import pandas_datareader.data as web
 import plotly.graph_objs as go
+#import pathlib
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 
 #quandl_key = "TJwUr8gUrzViDvSKYi7E"
 AV_KEY = "FSXSU0EGCLBCMEGI"
@@ -42,8 +40,8 @@ def generate_figure(df, title):
                        name=column) for column in df.columns]
     layout = dict(
             title=title,
-            #width=1000,
-            #height=600,
+            # width=1000,
+            # height=600,
             autosize=True,
             margin={
                     "r": 30,
@@ -207,5 +205,35 @@ def generate_result(n,data):
 
 
 if __name__ == "__main__":
+    import platform, socket
     app.title = "Volatility Analysis Tool"
-    app.run_server(debug=True, port=5050)
+    port = 5050
+    url = "http://127.0.0.1:{}".format(port)
+    
+    chrome_path = {}
+    # MacOS
+    chrome_path['Darwin'] = r'open -a /Applications/Google\ Chrome.app %s'
+    
+    # Windows
+    chrome_path['Windows'] = r'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s'
+
+    # Linux
+    chrome_path['Linux'] = r'/usr/bin/google-chrome %s'
+
+    # check if the port is already used
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # while True:
+    #     result = sock.connect_ex(('127.0.0.1', port))
+    #     if result == 0:
+    #         # port used
+    #         port += 1
+    #     else:
+    #         # port not used
+    #         url = "http://127.0.0.1:{}".format(port)
+    #         break
+    # sock.close()
+
+    # open chrome on url
+    webbrowser.get(chrome_path[platform.system()]).open(url)
+
+    app.run_server(debug=True, port=port)
