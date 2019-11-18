@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+NAME=${1?Error: no name given}
+echo "HELLO! $NAME"
+
