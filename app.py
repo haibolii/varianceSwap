@@ -17,6 +17,8 @@ import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
+from utils import cal_vol
+
 #quandl_key = "TJwUr8gUrzViDvSKYi7E"
 AV_KEY = "FSXSU0EGCLBCMEGI"
 
@@ -46,7 +48,7 @@ def generate_figure(df, title):
             margin={
                     "r": 30,
                     "t": 45,
-                    "b": 30,
+                    "b": 40,
                     "l": 40,
                 },
             font={"family": "Arial", "size": 12},
@@ -164,7 +166,8 @@ app.layout = html.Div(className="body",children=[
                 html.Button("Generate Result", n_clicks=0,
                            className="button-primary",
                            id="display_button"),
-                dcc.Loading([dcc.Store(id="raw_data")]),
+                dcc.Loading([dcc.Store(id="raw_data"),
+                             dcc.Store(id="hist_vol")]),
                 dcc.ConfirmDialog(id='tkr_error', message='',),
 
 
@@ -182,26 +185,30 @@ app.layout = html.Div(className="body",children=[
 
     ])
 
-@app.callback([Output("raw_data","data"),Output("tkr_error","displayed"),Output("tkr_error","message")],
+@app.callback([Output("raw_data","data"), Output("hist_vol","data"), Output("tkr_error","displayed"),
+               Output("tkr_error","message")],
               [Input("download_button","n_clicks")],
-              [State("input_tkr","value"),State("start_date","date"),State("end_date","date")])
-def pull_data(n,tkr,start,end):
+              [State("input_tkr","value"), State("start_date","date"), State("end_date","date")])
+def pull_data(n, tkr, start, end):
     if n < 1: raise PreventUpdate
     try:
         f = web.DataReader(tkr.upper(), "av-daily", start=start, end=end, api_key=AV_KEY)
         res = f["close"].fillna(method="ffill").fillna(method="bfill")
         res.name = tkr
-        return pd.DataFrame(res).to_dict(), False, " "
+        vol = cal_vol(res, 30)
+        return pd.DataFrame(res).to_dict(), pd.DataFrame(vol).to_dict(),False, " "
     except Exception as e:
-        return None, True, str(e)
+        return None, None, True, str(e)
 
 @app.callback(Output("result","children"),[Input("display_button","n_clicks")],
-                   [State("raw_data","data")])
-def generate_result(n,data):
+                   [State("raw_data","data"), State("hist_vol","data")])
+def generate_result(n, data, vol):
     if n < 1: raise PreventUpdate
-    df = pd.DataFrame.from_dict(data)
-    figure = generate_figure(df, "Daily Close")
-    return [dcc.Graph(figure=figure, config={"displayModeBar": True},)]
+    df_data, df_vol = pd.DataFrame.from_dict(data), pd.DataFrame.from_dict(vol)
+    figure_data = generate_figure(df_data, "Daily Close")
+    figure_vol = generate_figure(df_vol, "Historical Vol")
+    return [dcc.Graph(figure=figure_data, config={"displayModeBar": True},),
+            dcc.Graph(figure=figure_vol, config={"displayModeBar": True},)]  
 
 
 if __name__ == "__main__":
